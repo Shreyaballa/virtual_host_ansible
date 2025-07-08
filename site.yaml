@@ -1,0 +1,75 @@
+---
+- name: Deploy 2 websites with NGINX virtual hosts
+  hosts: webservers
+  become: yes
+
+  vars:
+    sites:
+      - name: example1.com
+        src: html5up-dimension
+        root: /var/www/example1.com
+
+      - name: example2.com
+        src: html5up-editorial
+        root: /var/www/example2.com
+
+  tasks:
+
+    - name: Install NGINX
+      apt:
+        name: nginx
+        state: present
+        update_cache: yes
+
+    - name: Set up virtual hosts
+      block:
+        - name: Create document root for {{ item.name }}
+          file:
+            path: "{{ item.root }}"
+            state: directory
+            owner: www-data
+            group: www-data
+            mode: '0755'
+
+        - name: Copy website files for {{ item.name }}
+          copy:
+            src: "files/{{ item.src }}/"
+            dest: "{{ item.root }}/"
+            owner: www-data
+            group: www-data
+            mode: '0644'
+
+        - name: Create NGINX config for {{ item.name }}
+          template:
+            src: templates/virtualhost.conf.j2
+            dest: "/etc/nginx/sites-available/{{ item.name }}"
+
+        - name: Enable site {{ item.name }}
+          file:
+            src: "/etc/nginx/sites-available/{{ item.name }}"
+            dest: "/etc/nginx/sites-enabled/{{ item.name }}"
+            state: link
+            force: yes
+
+      loop: "{{ sites }}"
+
+    - name: Remove default site
+      file:
+        path: /etc/nginx/sites-enabled/default
+        state: absent
+
+    - name: Test NGINX config
+      command: nginx -t
+      register: nginx_test
+      ignore_errors: yes
+
+    - name: Fail if NGINX config fails
+      fail:
+        msg: "NGINX configuration test failed"
+      when: nginx_test.rc != 0
+
+    - name: Reload NGINX
+      service:
+        name: nginx
+        state: reloaded
+s
