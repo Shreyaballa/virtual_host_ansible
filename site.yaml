@@ -6,15 +6,15 @@
   vars:
     apps:
       - name: story
-        zip: html5up-story.zip
+        zip: html5up-story
         dir: /var/www/story
         server_name: story
       - name: dimension
-        zip: html5up-dimension.zip
+        zip: html5up-dimension
         dir: /var/www/dimension
         server_name: dimension
       - name: editorial
-        zip: html5up-editorial.zip
+        zip: html5up-editorial
         dir: /var/www/editorial
         server_name: editorial
 
