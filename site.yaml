@@ -21,36 +21,36 @@
         state: present
         update_cache: yes
 
-    - name: Set up virtual hosts
-      block:
-        - name: Create document root for {{ item.name }}
-          file:
-            path: "{{ item.root }}"
-            state: directory
-            owner: www-data
-            group: www-data
-            mode: '0755'
+    - name: Create document roots
+      file:
+        path: "{{ item.root }}"
+        state: directory
+        owner: www-data
+        group: www-data
+        mode: '0755'
+      loop: "{{ sites }}"
 
-        - name: Copy website files for {{ item.name }}
-          copy:
-            src: "files/{{ item.src }}/"
-            dest: "{{ item.root }}/"
-            owner: www-data
-            group: www-data
-            mode: '0644'
+    - name: Copy website files
+      copy:
+        src: "files/{{ item.src }}/"
+        dest: "{{ item.root }}/"
+        owner: www-data
+        group: www-data
+        mode: '0644'
+      loop: "{{ sites }}"
 
-        - name: Create NGINX config for {{ item.name }}
-          template:
-            src: templates/virtualhost.conf.j2
-            dest: "/etc/nginx/sites-available/{{ item.name }}"
+    - name: Create NGINX config files
+      template:
+        src: templates/virtualhost.conf.j2
+        dest: "/etc/nginx/sites-available/{{ item.name }}"
+      loop: "{{ sites }}"
 
-        - name: Enable site {{ item.name }}
-          file:
-            src: "/etc/nginx/sites-available/{{ item.name }}"
-            dest: "/etc/nginx/sites-enabled/{{ item.name }}"
-            state: link
-            force: yes
-
+    - name: Enable virtual host sites
+      file:
+        src: "/etc/nginx/sites-available/{{ item.name }}"
+        dest: "/etc/nginx/sites-enabled/{{ item.name }}"
+        state: link
+        force: yes
       loop: "{{ sites }}"
 
     - name: Remove default site
@@ -69,6 +69,6 @@
       when: nginx_test.rc != 0
 
     - name: Reload NGINX
-      service: 
+      service:
         name: nginx
         state: reloaded

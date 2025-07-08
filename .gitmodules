@@ -1,3 +1,0 @@
-[submodule "virtual_host_ansible"]
-	path = virtual_host_ansible
-	url = https://github.com/shreyaballa/virtual_host_ansible.git
