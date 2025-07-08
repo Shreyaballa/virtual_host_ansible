@@ -8,15 +8,15 @@
       - name: story
         zip: html5up-story.zip
         dir: /var/www/story
-        server_name: story.example.com
+        server_name: story
       - name: dimension
         zip: html5up-dimension.zip
         dir: /var/www/dimension
-        server_name: dimension.example.com
+        server_name: dimension
       - name: editorial
         zip: html5up-editorial.zip
         dir: /var/www/editorial
-        server_name: editorial.example.com
+        server_name: editorial
 
   tasks:
     - name: Install required packages
@@ -50,7 +50,7 @@
 
     - name: Create NGINX virtual host configs
       template:
-        src: "templates/{{ item.name }}.conf.j2"
+        src: "{{ item.name }}.conf.j2"   # <<✅ corrected
         dest: "/etc/nginx/sites-available/{{ item.name }}"
       loop: "{{ apps }}"
 
