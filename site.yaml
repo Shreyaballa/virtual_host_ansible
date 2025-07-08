@@ -69,7 +69,6 @@
       when: nginx_test.rc != 0
 
     - name: Reload NGINX
-      service:
+      service: 
         name: nginx
         state: reloaded
-s
