@@ -1,0 +1,73 @@
+---
+- name: Deploy multiple HTML5UP templates with NGINX
+  hosts: webservers
+  become: yes
+
+  vars:
+    apps:
+      - name: story
+        zip: html5up-story.zip
+        dir: /var/www/story
+        server_name: story.example.com
+      - name: dimension
+        zip: html5up-dimension.zip
+        dir: /var/www/dimension
+        server_name: dimension.example.com
+      - name: editorial
+        zip: html5up-editorial.zip
+        dir: /var/www/editorial
+        server_name: editorial.example.com
+
+  tasks:
+    - name: Install required packages
+      apt:
+        name: ['nginx', 'unzip']
+        state: present
+        update_cache: yes
+
+    - name: Create web directories
+      file:
+        path: "{{ item.dir }}"
+        state: directory
+        owner: www-data
+        group: www-data
+        mode: '0755'
+      loop: "{{ apps }}"
+
+    - name: Copy website zip files
+      copy:
+        src: "files/{{ item.zip }}"
+        dest: "/tmp/{{ item.zip }}"
+      loop: "{{ apps }}"
+
+    - name: Unzip website content
+      unarchive:
+        src: "/tmp/{{ item.zip }}"
+        dest: "{{ item.dir }}"
+        remote_src: yes
+        extra_opts: [ "-o" ]
+      loop: "{{ apps }}"
+
+    - name: Create NGINX virtual host configs
+      template:
+        src: "templates/{{ item.name }}.conf.j2"
+        dest: "/etc/nginx/sites-available/{{ item.name }}"
+      loop: "{{ apps }}"
+
+    - name: Enable virtual hosts
+      file:
+        src: "/etc/nginx/sites-available/{{ item.name }}"
+        dest: "/etc/nginx/sites-enabled/{{ item.name }}"
+        state: link
+        force: yes
+      loop: "{{ apps }}"
+
+    - name: Remove default NGINX site
+      file:
+        path: /etc/nginx/sites-enabled/default
+        state: absent
+
+    - name: Restart NGINX
+      service:
+        name: nginx
+        state: restarted
