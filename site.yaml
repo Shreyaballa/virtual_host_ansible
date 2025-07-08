@@ -6,15 +6,15 @@
   vars:
     apps:
       - name: story
-        zip: html5up-story
+        zip: html5up-story.zip
         dir: /var/www/story
         server_name: story
       - name: dimension
-        zip: html5up-dimension
+        zip: html5up-dimension.zip
         dir: /var/www/dimension
         server_name: dimension
       - name: editorial
-        zip: html5up-editorial
+        zip: html5up-editorial.zip
         dir: /var/www/editorial
         server_name: editorial
 
@@ -50,7 +50,7 @@
 
     - name: Create NGINX virtual host configs
       template:
-        src: "{{ item.name }}.conf.j2"   # <<✅ corrected
+        src: "{{ item.name }}.conf.j2"
         dest: "/etc/nginx/sites-available/{{ item.name }}"
       loop: "{{ apps }}"
 

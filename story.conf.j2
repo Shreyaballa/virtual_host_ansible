@@ -1,8 +1,8 @@
 server {
     listen 80;
-    server_name story;
+    server_name {{ item.server_name }};
 
-    root /var/www/story;
+    root {{ item.dir }};
     index index.html;
 
     location / {
