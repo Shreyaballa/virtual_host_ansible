@@ -1,73 +1,53 @@
 ---
-- name: Deploy multiple HTML5UP templates with NGINX
+- name: Configure Apache Virtual Host
   hosts: webservers
   become: yes
 
-  vars:
-    apps:
-      - name: story
-        zip: html5up-story.zip
-        dir: /var/www/story
-        server_name: story
-      - name: dimension
-        zip: html5up-dimension.zip
-        dir: /var/www/dimension
-        server_name: dimension
-      - name: editorial
-        zip: html5up-editorial.zip
-        dir: /var/www/editorial
-        server_name: editorial
-
   tasks:
-    - name: Install required packages
+
+    - name: Install Apache
       apt:
-        name: ['nginx', 'unzip']
+        name: apache2
         state: present
         update_cache: yes
 
-    - name: Create web directories
+    - name: Create document root directory
       file:
-        path: "{{ item.dir }}"
+        path: /var/www/mysite
         state: directory
         owner: www-data
         group: www-data
         mode: '0755'
-      loop: "{{ apps }}"
 
-    - name: Copy website zip files
+    - name: Add index.html for mysite
       copy:
-        src: "files/{{ item.zip }}"
-        dest: "/tmp/{{ item.zip }}"
-      loop: "{{ apps }}"
+        content: "<h1>Welcome to MySite!</h1>"
+        dest: /var/www/mysite/index.html
+        owner: www-data
+        group: www-data
+        mode: '0644'
 
-    - name: Unzip website content
-      unarchive:
-        src: "/tmp/{{ item.zip }}"
-        dest: "{{ item.dir }}"
-        remote_src: yes
-        extra_opts: [ "-o" ]
-      loop: "{{ apps }}"
+    - name: Copy virtual host config file
+      copy:
+        src: files/mysite.conf
+        dest: /etc/apache2/sites-available/mysite.conf
 
-    - name: Create NGINX virtual host configs
-      template:
-        src: "{{ item.name }}.conf.j2"
-        dest: "/etc/nginx/sites-available/{{ item.name }}"
-      loop: "{{ apps }}"
+    - name: Enable mysite virtual host
+      command: a2ensite mysite.conf
+      notify: Restart Apache
 
-    - name: Enable virtual hosts
-      file:
-        src: "/etc/nginx/sites-available/{{ item.name }}"
-        dest: "/etc/nginx/sites-enabled/{{ item.name }}"
-        state: link
-        force: yes
-      loop: "{{ apps }}"
+    - name: Disable default virtual host
+      command: a2dissite 000-default.conf
+      notify: Restart Apache
 
-    - name: Remove default NGINX site
-      file:
-        path: /etc/nginx/sites-enabled/default
-        state: absent
-
-    - name: Restart NGINX
+    - name: Ensure Apache is running
       service:
-        name: nginx
+        name: apache2
+        state: started
+        enabled: true
+
+  handlers:
+    - name: Restart Apache
+      service:
+        name: apache2
         state: restarted
